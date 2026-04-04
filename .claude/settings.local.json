@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker info:*)",
+      "Bash(PGPASSWORD=postgres \"/c/Program Files/PostgreSQL/18/bin/psql\" -U postgres -h localhost -c \"\\\\l\")",
+      "Bash(PGPASSWORD=admin \"/c/Program Files/PostgreSQL/18/bin/psql\" -U postgres -h localhost -p 5432 -c \"\\\\l\")"
+    ]
+  }
+}

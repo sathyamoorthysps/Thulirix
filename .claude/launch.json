@@ -1,0 +1,44 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Thulirix Backend (Spring Boot)",
+      "runtimeExecutable": "mvn",
+      "runtimeArgs": [
+        "spring-boot:run",
+        "-f", "C:/Users/sathy/thulirix/backend/pom.xml"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "Thulirix Frontend (Vite / React)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix", "C:/Users/sathy/thulirix/frontend",
+        "run", "dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "Thulirix Infrastructure (Docker Compose)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": [
+        "compose",
+        "-f", "C:/Users/sathy/thulirix/docker-compose.yml",
+        "up",
+        "--build"
+      ],
+      "port": 80
+    },
+    {
+      "name": "Thulirix DB Only (PostgreSQL via Docker)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": [
+        "compose",
+        "-f", "C:/Users/sathy/thulirix/docker-compose.yml",
+        "up", "postgres", "redis"
+      ],
+      "port": 5432
+    }
+  ]
+}
