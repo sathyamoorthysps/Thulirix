@@ -1,0 +1,133 @@
+{
+  "workitems": [
+    {
+      "id": 1001,
+      "rev": 3,
+      "fields": {
+        "System.Id": 1001,
+        "System.Title": "Verify successful credit card payment",
+        "System.WorkItemType": "Test Case",
+        "System.State": "Active",
+        "System.AreaPath": "Payments\\QA",
+        "System.TeamProject": "PaymentsProject",
+        "System.AssignedTo": { "displayName": "QA Lead Demo" },
+        "Microsoft.VSTS.Common.Priority": 1,
+        "System.Description": "Ensure a user can complete a payment using a valid credit card",
+        "System.Tags": "smoke; regression",
+        "System.CreatedDate": "2026-01-10T09:00:00Z",
+        "System.ChangedDate": "2026-03-15T14:30:00Z"
+      }
+    },
+    {
+      "id": 1002,
+      "rev": 2,
+      "fields": {
+        "System.Id": 1002,
+        "System.Title": "Verify payment failure with invalid card",
+        "System.WorkItemType": "Test Case",
+        "System.State": "Active",
+        "System.AreaPath": "Payments\\QA",
+        "System.TeamProject": "PaymentsProject",
+        "System.AssignedTo": { "displayName": "QA Lead Demo" },
+        "Microsoft.VSTS.Common.Priority": 2,
+        "System.Description": "Ensure system gracefully handles payment failure with an invalid card",
+        "System.Tags": "regression",
+        "System.CreatedDate": "2026-01-11T09:00:00Z",
+        "System.ChangedDate": "2026-03-16T10:00:00Z"
+      }
+    },
+    {
+      "id": 2001,
+      "rev": 1,
+      "fields": {
+        "System.Id": 2001,
+        "System.Title": "User can process credit card payment",
+        "System.WorkItemType": "User Story",
+        "System.State": "Active",
+        "System.AreaPath": "Payments",
+        "System.TeamProject": "PaymentsProject",
+        "Microsoft.VSTS.Common.Priority": 1,
+        "System.Description": "As a user, I want to pay by credit card so I can complete my purchase.",
+        "System.CreatedDate": "2026-01-05T09:00:00Z",
+        "System.ChangedDate": "2026-03-01T12:00:00Z"
+      }
+    }
+  ],
+  "testplans": [
+    {
+      "id": 501,
+      "name": "Sprint 1 — Payments QA",
+      "state": "Active",
+      "startDate": "2026-03-01T00:00:00Z",
+      "endDate": "2026-03-15T00:00:00Z",
+      "project": { "name": "PaymentsProject" }
+    },
+    {
+      "id": 502,
+      "name": "Sprint 2 — Payments QA",
+      "state": "Active",
+      "startDate": "2026-03-16T00:00:00Z",
+      "endDate": "2026-03-31T00:00:00Z",
+      "project": { "name": "PaymentsProject" }
+    }
+  ],
+  "testruns": [
+    {
+      "id": 301,
+      "name": "Sprint 1 Automated Run",
+      "state": "Completed",
+      "plan": { "id": 501, "name": "Sprint 1 — Payments QA" },
+      "totalTests": 12,
+      "passedTests": 9,
+      "failedTests": 2,
+      "incompleteTests": 1,
+      "startedDate": "2026-03-10T08:00:00Z",
+      "completedDate": "2026-03-10T08:45:00Z",
+      "isAutomated": true
+    },
+    {
+      "id": 302,
+      "name": "Sprint 1 Manual Run",
+      "state": "Completed",
+      "plan": { "id": 501 },
+      "totalTests": 5,
+      "passedTests": 4,
+      "failedTests": 1,
+      "incompleteTests": 0,
+      "startedDate": "2026-03-12T10:00:00Z",
+      "completedDate": "2026-03-12T12:00:00Z",
+      "isAutomated": false
+    }
+  ],
+  "testresults": [
+    {
+      "id": 1,
+      "testRun": { "id": 301 },
+      "testCase": { "id": 1001 },
+      "outcome": "Passed",
+      "durationInMs": 1240,
+      "completedDate": "2026-03-10T08:12:00Z",
+      "runBy": { "displayName": "CI Pipeline" }
+    },
+    {
+      "id": 2,
+      "testRun": { "id": 301 },
+      "testCase": { "id": 1002 },
+      "outcome": "Failed",
+      "durationInMs": 3100,
+      "errorMessage": "Element not found: #error-message-banner",
+      "completedDate": "2026-03-10T08:15:00Z",
+      "runBy": { "displayName": "CI Pipeline" }
+    }
+  ],
+  "projects": [
+    {
+      "id": "ado-proj-001",
+      "name": "PaymentsProject",
+      "description": "Payments platform project",
+      "state": "wellFormed",
+      "visibility": "private",
+      "lastUpdateTime": "2026-03-20T10:00:00Z"
+    }
+  ]
+}

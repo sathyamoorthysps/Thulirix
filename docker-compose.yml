@@ -1,0 +1,127 @@
+version: '3.9'
+
+services:
+  # ─────────────────────────────────────────
+  # PostgreSQL — primary database
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: thulirix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: thulirix
+      POSTGRES_USER: thulirix_user
+      POSTGRES_PASSWORD: thulirix_pass
+    ports:
+      - "6004:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U thulirix_user -d thulirix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - thulirix-net
+
+  # ─────────────────────────────────────────
+  # Redis — caching & session store
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: thulirix-redis
+    restart: unless-stopped
+    command: redis-server --requirepass thulirix_redis_pass
+    ports:
+      - "6005:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "thulirix_redis_pass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - thulirix-net
+
+  # ─────────────────────────────────────────
+  # Spring Boot Backend
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: thulirix-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: thulirix
+      DB_USER: thulirix_user
+      DB_PASS: thulirix_pass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: thulirix_redis_pass
+      JWT_SECRET: thulirix-super-secret-jwt-key-change-in-production-must-be-256-bits
+      JWT_EXPIRATION_MS: 86400000
+      APP_BASE_URL: http://localhost:6001
+    ports:
+      - "6001:6001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6001/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - thulirix-net
+
+  # ─────────────────────────────────────────
+  # React Frontend (served via Nginx)
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:6001/api/v1
+    container_name: thulirix-frontend
+    restart: unless-stopped
+    ports:
+      - "6002:80"
+    depends_on:
+      - backend
+    networks:
+      - thulirix-net
+
+  # ─────────────────────────────────────────
+  # Nginx reverse proxy (optional gateway)
+  # ─────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: thulirix-nginx
+    restart: unless-stopped
+    ports:
+      - "6003:80"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - thulirix-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  thulirix-net:
+    driver: bridge

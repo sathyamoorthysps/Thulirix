@@ -1,0 +1,141 @@
+spring:
+  application:
+    name: thulirix-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:6004}/${DB_NAME:thulirix}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:admin}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: ThulirixPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      auto-commit: false
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+        jdbc:
+          batch_size: 50
+          order_inserts: true
+          order_updates: true
+        cache:
+          use_second_level_cache: false
+
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6005}
+      password: ${REDIS_PASSWORD:thulirix_redis_pass}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: NON_NULL
+
+server:
+  port: ${SERVER_PORT:6001}
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Thulirix
+    version: '@project.version@'
+    description: Enterprise Test Case Repository Platform
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    try-it-out-enabled: true
+  show-actuator: false
+
+thulirix:
+  jwt:
+    secret: ${JWT_SECRET:thulirix-super-secret-jwt-key-change-in-production-must-be-256-bits}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}       # 24 hours
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}  # 7 days
+
+  integration:
+    ado:
+      api-version: "7.1"
+      timeout-seconds: 30
+      retry-max-attempts: 3
+      retry-delay-ms: 1000
+    salesforce:
+      api-version: "v59.0"
+      timeout-seconds: 30
+      retry-max-attempts: 3
+
+  bulk-import:
+    max-records-per-job: 5000
+    async-threshold: 100
+
+logging:
+  level:
+    root: INFO
+    com.thulirix: DEBUG
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/thulirix.log
+    max-size: 100MB
+    max-history: 30
