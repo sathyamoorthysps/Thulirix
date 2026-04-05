@@ -3,12 +3,15 @@
   "configurations": [
     {
       "name": "Thulirix Backend (Spring Boot)",
-      "runtimeExecutable": "mvn",
+      "runtimeExecutable": "C:/Users/sathy/.maven/maven-3.9.12/bin/mvn.cmd",
       "runtimeArgs": [
         "spring-boot:run",
-        "-f", "C:/Users/sathy/thulirix/backend/pom.xml"
+        "-f", "C:/Users/sathy/thulirix/backend/pom.xml",
+        "-DDB_PORT=5432",
+        "-DDB_USER=postgres",
+        "-DDB_PASS=admin"
       ],
-      "port": 8080
+      "port": 6001
     },
     {
       "name": "Thulirix Frontend (Vite / React)",
@@ -17,7 +20,8 @@
         "--prefix", "C:/Users/sathy/thulirix/frontend",
         "run", "dev"
       ],
-      "port": 5173
+      "port": 5173,
+      "autoPort": false
     },
     {
       "name": "Thulirix Infrastructure (Docker Compose)",
