@@ -139,11 +139,11 @@ export interface TestPlanResponse {
   id: string;
   name: string;
   description: string;
-  projectId: string;
+  status: string;
+  environment?: string;
+  buildVersion?: string;
+  totalCases: number;
   testCaseIds: string[];
-  runs: TestRunResponse[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 // ── Dashboard ──

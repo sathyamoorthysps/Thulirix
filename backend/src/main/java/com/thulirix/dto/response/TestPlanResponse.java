@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,4 +21,5 @@ public class TestPlanResponse {
     private LocalDate endDate;
     private String adoPlanId;
     private int totalCases;
+    private List<UUID> testCaseIds;
 }

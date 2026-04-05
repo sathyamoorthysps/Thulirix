@@ -38,6 +38,10 @@ public class TestRunResponse {
         return "PENDING";
     }
 
+    public int getPending() {
+        return Math.max(0, totalCount - passedCount - failedCount - blockedCount - skippedCount);
+    }
+
     public Double getPassRate() {
         if (totalCount == 0) return null;
         return Math.round((passedCount * 100.0 / totalCount) * 100.0) / 100.0;

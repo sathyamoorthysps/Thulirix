@@ -39,7 +39,7 @@ export const executionApi = {
       .get<TestRunResponse>(`/projects/${projectId}/test-plans/${planId}/runs/${runId}`)
       .then((r) => r.data),
 
-  updatePlan: (projectId: string, planId: string, data: { name: string; description: string }) =>
+  updatePlan: (projectId: string, planId: string, data: { name: string; description: string; testCaseIds?: string[] }) =>
     apiClient
       .put<TestPlanResponse>(`/projects/${projectId}/test-plans/${planId}`, data)
       .then((r) => r.data),

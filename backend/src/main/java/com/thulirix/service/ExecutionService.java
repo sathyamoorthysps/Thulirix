@@ -55,7 +55,23 @@ public class ExecutionService {
                 .build();
 
         plan = testPlanRepository.save(plan);
-        log.info("TestPlan '{}' created in project {}", plan.getName(), projectId);
+
+        if (request.getTestCaseIds() != null && !request.getTestCaseIds().isEmpty()) {
+            List<TestCase> testCases = testCaseRepository.findAllById(request.getTestCaseIds()).stream()
+                    .filter(tc -> tc.getProject().getId().equals(projectId) && !tc.isDeleted())
+                    .collect(Collectors.toList());
+            for (TestCase tc : testCases) {
+                plan.getPlanCases().add(TestPlanCase.builder()
+                        .testPlan(plan)
+                        .testCase(tc)
+                        .tcVersion(tc.getCurrentVersion())
+                        .build());
+            }
+            plan = testPlanRepository.save(plan);
+        }
+
+        log.info("TestPlan '{}' created in project {} with {} cases",
+                plan.getName(), projectId, plan.getPlanCases().size());
         return toPlanResponse(plan);
     }
 
@@ -77,8 +93,27 @@ public class ExecutionService {
                 .orElseThrow(() -> new ResourceNotFoundException("TestPlan", planId));
         plan.setName(request.getName());
         if (request.getDescription() != null) plan.setDescription(request.getDescription());
+
+        if (request.getTestCaseIds() != null) {
+            // Clear existing entries; orphanRemoval=true will delete them on flush
+            plan.getPlanCases().clear();
+
+            if (!request.getTestCaseIds().isEmpty()) {
+                List<TestCase> testCases = testCaseRepository.findAllById(request.getTestCaseIds()).stream()
+                        .filter(tc -> tc.getProject().getId().equals(projectId) && !tc.isDeleted())
+                        .collect(Collectors.toList());
+                for (TestCase tc : testCases) {
+                    plan.getPlanCases().add(TestPlanCase.builder()
+                            .testPlan(plan)
+                            .testCase(tc)
+                            .tcVersion(tc.getCurrentVersion())
+                            .build());
+                }
+            }
+        }
+
         plan = testPlanRepository.save(plan);
-        log.info("TestPlan {} updated", planId);
+        log.info("TestPlan {} updated with {} cases", planId, plan.getPlanCases().size());
         return toPlanResponse(plan);
     }
 
@@ -358,7 +393,11 @@ public class ExecutionService {
     }
 
     private TestPlanResponse toPlanResponse(TestPlan plan) {
-        int totalCases = plan.getPlanCases() != null ? plan.getPlanCases().size() : 0;
+        List<UUID> tcIds = plan.getPlanCases() != null
+                ? plan.getPlanCases().stream()
+                        .map(pc -> pc.getTestCase().getId())
+                        .collect(Collectors.toList())
+                : List.of();
         return TestPlanResponse.builder()
                 .id(plan.getId())
                 .name(plan.getName())
@@ -369,7 +408,8 @@ public class ExecutionService {
                 .startDate(plan.getStartDate())
                 .endDate(plan.getEndDate())
                 .adoPlanId(plan.getAdoPlanId())
-                .totalCases(totalCases)
+                .totalCases(tcIds.size())
+                .testCaseIds(tcIds)
                 .build();
     }
 
