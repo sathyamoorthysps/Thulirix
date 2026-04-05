@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useProjectStore } from '@/store/projectStore';
+import { useRole } from '@/hooks/useRole';
 import { cn } from '@/utils/helpers';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -21,11 +22,27 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-slate-300 hover:bg-slate-700 hover:text-white',
   );
 
+// Role hierarchy: SYSTEM_ADMIN > TEST_LEAD > TESTER (default)
+function useNavPermissions() {
+  const { roles } = useRole();
+  const isAdmin = roles.includes('SYSTEM_ADMIN');
+  const isLead  = roles.includes('TEST_LEAD');
+
+  return {
+    showDashboard:    true,                   // all roles
+    showTestCases:    true,                   // all roles
+    showExecutions:   isAdmin || isLead,      // admin + lead
+    showIntegrations: isAdmin,                // admin only
+    showSettings:     isAdmin || isLead,      // admin + lead
+  };
+}
+
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const activeProject = useProjectStore((s) => s.activeProject);
   const clearActiveProject = useProjectStore((s) => s.clearActiveProject);
+  const nav = useNavPermissions();
 
   const handleLogout = () => {
     logout();
@@ -58,51 +75,61 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
               </p>
             </div>
 
-            <NavLink
-              to={`/projects/${activeProject.id}/dashboard`}
-              className={linkClass}
-              onClick={handleClick}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </NavLink>
+            {nav.showDashboard && (
+              <NavLink
+                to={`/projects/${activeProject.id}/dashboard`}
+                className={linkClass}
+                onClick={handleClick}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </NavLink>
+            )}
 
-            <NavLink
-              to={`/projects/${activeProject.id}/test-cases`}
-              className={linkClass}
-              onClick={handleClick}
-            >
-              <FlaskConical className="h-4 w-4" />
-              Test Cases
-            </NavLink>
+            {nav.showTestCases && (
+              <NavLink
+                to={`/projects/${activeProject.id}/test-cases`}
+                className={linkClass}
+                onClick={handleClick}
+              >
+                <FlaskConical className="h-4 w-4" />
+                Test Cases
+              </NavLink>
+            )}
 
-            <NavLink
-              to={`/projects/${activeProject.id}/executions`}
-              className={linkClass}
-              onClick={handleClick}
-            >
-              <PlayCircle className="h-4 w-4" />
-              Executions
-            </NavLink>
+            {nav.showExecutions && (
+              <NavLink
+                to={`/projects/${activeProject.id}/executions`}
+                className={linkClass}
+                onClick={handleClick}
+              >
+                <PlayCircle className="h-4 w-4" />
+                Executions
+              </NavLink>
+            )}
 
-            <NavLink
-              to={`/projects/${activeProject.id}/integrations`}
-              className={linkClass}
-              onClick={handleClick}
-            >
-              <Plug2 className="h-4 w-4" />
-              Integrations
-            </NavLink>
+            {nav.showIntegrations && (
+              <NavLink
+                to={`/projects/${activeProject.id}/integrations`}
+                className={linkClass}
+                onClick={handleClick}
+              >
+                <Plug2 className="h-4 w-4" />
+                Integrations
+              </NavLink>
+            )}
           </>
         )}
       </nav>
 
       {/* Bottom */}
       <div className="px-3 py-4 border-t border-slate-700 space-y-1">
-        <NavLink to="/settings" className={linkClass} onClick={handleClick}>
-          <Settings className="h-4 w-4" />
-          Settings
-        </NavLink>
+        {nav.showSettings && (
+          <NavLink to="/settings" className={linkClass} onClick={handleClick}>
+            <Settings className="h-4 w-4" />
+            Settings
+          </NavLink>
+        )}
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
