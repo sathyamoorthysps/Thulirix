@@ -15,6 +15,7 @@ import {
   Pencil,
   X,
   Check,
+  Settings2,
 } from 'lucide-react';
 import { executionApi } from '@/api/executionApi';
 import { testCaseApi } from '@/api/testCaseApi';
@@ -128,6 +129,7 @@ export default function ExecutionsPage() {
   const [expandedRun,  setExpandedRun]  = useState<string | null>(null);
   const [showCreatePlan, setShowCreatePlan] = useState(false);
   const [showCreateRun,  setShowCreateRun]  = useState<string | null>(null);
+  const [editingPlan,    setEditingPlan]    = useState<TestPlanResponse | null>(null);
   const [planName, setPlanName] = useState('');
   const [planDesc, setPlanDesc] = useState('');
   const [runName,  setRunName]  = useState('');
@@ -144,7 +146,7 @@ export default function ExecutionsPage() {
   const { data: tcData } = useQuery({
     queryKey: ['testCases', projectId, { size: 200 }],
     queryFn: () => testCaseApi.list(projectId!, { size: 200 }),
-    enabled: !!projectId && showCreatePlan,
+    enabled: !!projectId && (showCreatePlan || !!editingPlan),
   });
 
   const { data: runs = [] } = useQuery({
@@ -182,6 +184,21 @@ export default function ExecutionsPage() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to create run'),
   });
 
+  const updatePlanMut = useMutation({
+    mutationFn: (plan: TestPlanResponse) =>
+      executionApi.updatePlan(projectId!, plan.id, {
+        name: planName,
+        description: planDesc,
+        testCaseIds: selectedTcIds,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plans', projectId] });
+      toast.success('Test plan updated');
+      setEditingPlan(null); setPlanName(''); setPlanDesc(''); setSelectedTcIds([]);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to update plan'),
+  });
+
   const updateExecMut = useMutation({
     mutationFn: ({ execId, result }: { execId: string; result: ExecutionResult }) =>
       executionApi.updateExecution(projectId!, expandedPlan!, expandedRun!, execId, { result }),
@@ -197,8 +214,17 @@ export default function ExecutionsPage() {
   const toggleTc = (id: string) =>
     setSelectedTcIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
+  function openEditPlan(plan: TestPlanResponse, e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditingPlan(plan);
+    setPlanName(plan.name);
+    setPlanDesc(plan.description ?? '');
+    setSelectedTcIds(plan.testCaseIds ?? []);
+  }
+
   async function savePlanName(plan: TestPlanResponse, name: string) {
     try {
+      // Pass testCaseIds: undefined so the backend doesn't change the case list
       await executionApi.updatePlan(projectId!, plan.id, { name, description: plan.description ?? '' });
       qc.invalidateQueries({ queryKey: ['plans', projectId] });
       toast.success('Plan renamed');
@@ -251,15 +277,18 @@ export default function ExecutionsPage() {
             <div key={plan.id} className="bg-white rounded-lg shadow-sm border border-slate-200">
 
               {/* Plan Header */}
-              <button
-                onClick={() => setExpandedPlan(expandedPlan === plan.id ? null : plan.id)}
-                className="w-full flex items-center justify-between px-5 py-4 text-left"
-              >
-                <div className="flex items-center gap-3">
+              <div className="w-full flex items-center justify-between px-5 py-4">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPlan(expandedPlan === plan.id ? null : plan.id)}
+                  onKeyDown={(e) => e.key === 'Enter' && setExpandedPlan(expandedPlan === plan.id ? null : plan.id)}
+                  className="flex items-center gap-3 flex-1 cursor-pointer min-w-0"
+                >
                   {expandedPlan === plan.id
                     ? <ChevronDown  className="h-4 w-4 text-slate-400 flex-shrink-0" />
                     : <ChevronRight className="h-4 w-4 text-slate-400 flex-shrink-0" />}
-                  <div>
+                  <div className="min-w-0">
                     {canEdit ? (
                       <InlineEdit
                         value={plan.name}
@@ -274,10 +303,21 @@ export default function ExecutionsPage() {
                     )}
                   </div>
                 </div>
-                <span className="text-xs text-slate-400 flex-shrink-0">
-                  {plan.testCaseIds?.length ?? 0} test cases
-                </span>
-              </button>
+                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                  <span className="text-xs text-slate-400">
+                    {plan.totalCases} test case{plan.totalCases !== 1 ? 's' : ''}
+                  </span>
+                  {canEdit && (
+                    <button
+                      onClick={(e) => openEditPlan(plan, e)}
+                      className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded"
+                      title="Edit plan"
+                    >
+                      <Settings2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {/* Runs */}
               {expandedPlan === plan.id && (
@@ -301,11 +341,14 @@ export default function ExecutionsPage() {
                     <div className="space-y-2">
                       {runs.map((run) => (
                         <div key={run.id}>
-                          <button
-                            onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
-                            className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
+                              onKeyDown={(e) => e.key === 'Enter' && setExpandedRun(expandedRun === run.id ? null : run.id)}
+                              className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                            >
                               {expandedRun === run.id
                                 ? <ChevronDown  className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                                 : <ChevronRight className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />}
@@ -331,7 +374,7 @@ export default function ExecutionsPage() {
                             <div className="w-48 flex-shrink-0">
                               <RunSummary run={run} />
                             </div>
-                          </button>
+                          </div>
 
                           {/* Executions Table */}
                           {expandedRun === run.id && (
@@ -476,6 +519,63 @@ export default function ExecutionsPage() {
               className="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 disabled:opacity-50"
             >
               {createRunMut.isPending ? 'Starting...' : 'Start Run'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Plan Modal */}
+      <Modal isOpen={!!editingPlan} onClose={() => setEditingPlan(null)} title="Edit Test Plan" size="lg">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+            <input
+              value={planName}
+              onChange={(e) => setPlanName(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <textarea
+              value={planDesc}
+              onChange={(e) => setPlanDesc(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Test Cases ({selectedTcIds.length} selected)
+            </label>
+            <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 space-y-1">
+              {(tcData?.content ?? []).map((tc) => (
+                <label key={tc.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTcIds.includes(tc.id)}
+                    onChange={() => toggleTc(tc.id)}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600"
+                  />
+                  <span className="font-mono text-xs text-slate-400">{tc.testCaseKey}</span>
+                  <span className="text-sm text-slate-700 truncate">{tc.title}</span>
+                </label>
+              ))}
+              {(tcData?.content ?? []).length === 0 && (
+                <p className="text-sm text-slate-400 py-4 text-center">No test cases available</p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setEditingPlan(null)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
+              Cancel
+            </button>
+            <button
+              onClick={() => editingPlan && updatePlanMut.mutate(editingPlan)}
+              disabled={!planName || updatePlanMut.isPending}
+              className="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 disabled:opacity-50"
+            >
+              {updatePlanMut.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>

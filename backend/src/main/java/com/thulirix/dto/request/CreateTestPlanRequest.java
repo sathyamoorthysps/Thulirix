@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
 @Data
 public class CreateTestPlanRequest {
@@ -20,4 +22,6 @@ public class CreateTestPlanRequest {
     private LocalDate startDate;
 
     private LocalDate endDate;
+
+    private List<UUID> testCaseIds;
 }
