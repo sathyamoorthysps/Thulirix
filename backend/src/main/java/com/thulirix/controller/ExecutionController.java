@@ -3,6 +3,8 @@ package com.thulirix.controller;
 import com.thulirix.dto.request.CreateTestPlanRequest;
 import com.thulirix.dto.request.CreateTestRunRequest;
 import com.thulirix.dto.request.UpdateExecutionRequest;
+import com.thulirix.dto.request.UpdateTestPlanRequest;
+import com.thulirix.dto.request.UpdateTestRunRequest;
 import com.thulirix.dto.response.*;
 import com.thulirix.security.UserPrincipal;
 import com.thulirix.service.ExecutionService;
@@ -52,6 +54,14 @@ public class ExecutionController {
         return ResponseEntity.ok(executionService.getPlan(projectId, planId));
     }
 
+    @PutMapping("/test-plans/{planId}")
+    public ResponseEntity<TestPlanResponse> updatePlan(
+            @PathVariable UUID projectId,
+            @PathVariable UUID planId,
+            @Valid @RequestBody UpdateTestPlanRequest request) {
+        return ResponseEntity.ok(executionService.updatePlan(projectId, planId, request));
+    }
+
     // ---------- Test Runs ----------
 
     @PostMapping("/test-plans/{planId}/runs")
@@ -78,6 +88,15 @@ public class ExecutionController {
             @PathVariable UUID planId,
             @PathVariable UUID runId) {
         return ResponseEntity.ok(executionService.getRun(projectId, runId));
+    }
+
+    @PutMapping("/test-plans/{planId}/runs/{runId}")
+    public ResponseEntity<TestRunResponse> updateRun(
+            @PathVariable UUID projectId,
+            @PathVariable UUID planId,
+            @PathVariable UUID runId,
+            @Valid @RequestBody UpdateTestRunRequest request) {
+        return ResponseEntity.ok(executionService.updateRun(projectId, planId, runId, request));
     }
 
     @GetMapping("/test-plans/{planId}/runs/{runId}/executions")

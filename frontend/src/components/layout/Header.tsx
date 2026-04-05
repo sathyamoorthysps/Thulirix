@@ -10,8 +10,8 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const activeProject = useProjectStore((s) => s.activeProject);
   const user = useAuthStore((s) => s.user);
 
-  const initials = user
-    ? `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase()
+  const initials = user?.displayName
+    ? user.displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
     : 'U';
 
   return (
@@ -34,7 +34,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
       <div className="flex items-center gap-3">
         {user && (
           <span className="hidden sm:block text-sm text-slate-600">
-            {user.firstName} {user.lastName}
+            {user.displayName}
           </span>
         )}
         <div className="h-8 w-8 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold">

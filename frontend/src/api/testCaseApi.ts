@@ -4,6 +4,7 @@ import type {
   TestCaseResponse,
   CreateTestCaseRequest,
   PageResponse,
+  StepAttachmentResponse,
 } from '@/types';
 
 export interface TestCaseListParams {
@@ -54,4 +55,25 @@ export const testCaseApi = {
     apiClient
       .post<TestCaseResponse>(`/projects/${projectId}/test-cases/${id}/versions/${version}/restore`)
       .then((r) => r.data),
+};
+
+export const stepAttachmentApi = {
+  list: (stepId: string) =>
+    apiClient.get<StepAttachmentResponse[]>(`/steps/${stepId}/attachments`).then((r) => r.data),
+
+  upload: (stepId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient
+      .post<StepAttachmentResponse>(`/steps/${stepId}/attachments`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
+
+  delete: (attachmentId: string) =>
+    apiClient.delete<void>(`/attachments/${attachmentId}`).then((r) => r.data),
+
+  downloadUrl: (attachmentId: string) =>
+    `/api/v1/attachments/${attachmentId}/file`,
 };

@@ -12,6 +12,7 @@ import com.thulirix.dto.response.*;
 import com.thulirix.exception.ResourceNotFoundException;
 import com.thulirix.exception.ValidationException;
 import com.thulirix.repository.*;
+import com.thulirix.dto.response.StepAttachmentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ public class TestCaseService {
     private final TestCaseVersionRepository versionRepository;
     private final TagRepository tagRepository;
     private final ProjectRepository projectRepository;
+    private final StepAttachmentRepository stepAttachmentRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -127,7 +129,7 @@ public class TestCaseService {
             testCase.getSteps().clear();
             List<TestStep> newSteps = buildStepsFromUpdate(testCase, request.getSteps());
             testStepRepository.saveAll(newSteps);
-            testCase.setSteps(newSteps);
+            testCase.getSteps().addAll(newSteps);
         }
 
         int newVersion = testCase.getCurrentVersion() + 1;
@@ -190,7 +192,7 @@ public class TestCaseService {
                     restoredSteps.add(step);
                 }
                 testStepRepository.saveAll(restoredSteps);
-                testCase.setSteps(restoredSteps);
+                testCase.getSteps().addAll(restoredSteps);
             } catch (JsonProcessingException e) {
                 log.error("Failed to deserialize steps snapshot for version {}: {}", versionNum, e.getMessage());
                 throw new ValidationException("Could not restore steps from version snapshot");
@@ -298,14 +300,30 @@ public class TestCaseService {
     private TestCaseResponse toFullResponse(TestCase testCase) {
         List<StepResponse> stepResponses = testCase.getSteps().stream()
                 .sorted(Comparator.comparingInt(TestStep::getStepOrder))
-                .map(s -> StepResponse.builder()
-                        .id(s.getId())
-                        .stepOrder(s.getStepOrder())
-                        .action(s.getAction())
-                        .expectedResult(s.getExpectedResult())
-                        .testData(s.getTestData())
-                        .sharedStep(s.isSharedStep())
-                        .build())
+                .map(s -> {
+                    List<StepAttachmentResponse> attachments = stepAttachmentRepository
+                            .findByTestStepIdOrderByCreatedAtAsc(s.getId())
+                            .stream()
+                            .map(a -> StepAttachmentResponse.builder()
+                                    .id(a.getId())
+                                    .testStepId(s.getId())
+                                    .originalName(a.getOriginalName())
+                                    .mimeType(a.getMimeType())
+                                    .fileSize(a.getFileSize())
+                                    .createdAt(a.getCreatedAt())
+                                    .downloadUrl("/api/v1/attachments/" + a.getId() + "/file")
+                                    .build())
+                            .collect(Collectors.toList());
+                    return StepResponse.builder()
+                            .id(s.getId())
+                            .stepOrder(s.getStepOrder())
+                            .action(s.getAction())
+                            .expectedResult(s.getExpectedResult())
+                            .testData(s.getTestData())
+                            .sharedStep(s.isSharedStep())
+                            .attachments(attachments)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         Set<TagResponse> tagResponses = testCase.getTags().stream()

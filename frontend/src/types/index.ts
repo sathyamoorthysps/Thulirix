@@ -9,14 +9,16 @@ export interface AuthResponse {
   refreshToken: string;
   tokenType: string;
   expiresIn: number;
+  user?: UserResponse;
 }
 
 export interface UserResponse {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
+  displayName: string;
+  roles: string[];
+  active: boolean;
+  lastLoginAt: string | null;
   createdAt: string;
 }
 
@@ -44,12 +46,23 @@ export type TestCaseStatus = 'DRAFT' | 'READY' | 'ARCHIVED' | 'DEPRECATED';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type AutomationStatus = 'NOT_AUTOMATED' | 'AUTOMATION_CANDIDATE' | 'AUTOMATED' | 'AUTOMATION_BROKEN';
 
+export interface StepAttachmentResponse {
+  id: string;
+  testStepId: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  createdAt: string;
+  downloadUrl: string;
+}
+
 export interface StepResponse {
   id: string;
   stepNumber: number;
   action: string;
   expectedResult: string;
   testData: string;
+  attachments: StepAttachmentResponse[];
 }
 
 export interface TestCaseSummaryResponse {

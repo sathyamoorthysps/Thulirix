@@ -13,11 +13,15 @@ export function useLogin() {
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: async (res) => {
       setTokens(res.accessToken, res.refreshToken);
-      try {
-        const user = await authApi.me();
-        setUser(user);
-      } catch {
-        // user fetch failed but tokens are set
+      if (res.user) {
+        setUser(res.user);
+      } else {
+        try {
+          const user = await authApi.me();
+          setUser(user);
+        } catch {
+          // user fetch failed but tokens are set
+        }
       }
       toast.success('Login successful');
       navigate('/projects');

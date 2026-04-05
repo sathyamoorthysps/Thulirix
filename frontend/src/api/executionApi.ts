@@ -15,8 +15,8 @@ export const executionApi = {
 
   listPlans: (projectId: string) =>
     apiClient
-      .get<TestPlanResponse[]>(`/projects/${projectId}/test-plans`)
-      .then((r) => r.data),
+      .get<{ content: TestPlanResponse[] }>(`/projects/${projectId}/test-plans`)
+      .then((r) => r.data.content),
 
   getPlan: (projectId: string, planId: string) =>
     apiClient
@@ -31,12 +31,22 @@ export const executionApi = {
 
   listRuns: (projectId: string, planId: string) =>
     apiClient
-      .get<TestRunResponse[]>(`/projects/${projectId}/test-plans/${planId}/runs`)
-      .then((r) => r.data),
+      .get<{ content: TestRunResponse[] }>(`/projects/${projectId}/test-plans/${planId}/runs`)
+      .then((r) => r.data.content),
 
   getRun: (projectId: string, planId: string, runId: string) =>
     apiClient
       .get<TestRunResponse>(`/projects/${projectId}/test-plans/${planId}/runs/${runId}`)
+      .then((r) => r.data),
+
+  updatePlan: (projectId: string, planId: string, data: { name: string; description: string }) =>
+    apiClient
+      .put<TestPlanResponse>(`/projects/${projectId}/test-plans/${planId}`, data)
+      .then((r) => r.data),
+
+  updateRun: (projectId: string, planId: string, runId: string, data: { name: string; environment?: string; buildVersion?: string }) =>
+    apiClient
+      .put<TestRunResponse>(`/projects/${projectId}/test-plans/${planId}/runs/${runId}`, data)
       .then((r) => r.data),
 
   // Executions

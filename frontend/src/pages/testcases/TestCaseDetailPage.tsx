@@ -1,15 +1,17 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Archive, Trash2, Clock } from 'lucide-react';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTestCase, useDeleteTestCase } from '@/hooks/useTestCases';
+import { useRole } from '@/hooks/useRole';
 import { testCaseApi } from '@/api/testCaseApi';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import PriorityBadge from '@/components/common/PriorityBadge';
 import StatusBadge from '@/components/common/StatusBadge';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
+import StepAttachments from '@/components/testcases/StepAttachments';
 import { formatDateTime, timeAgo } from '@/utils/helpers';
-import type { TestCaseResponse } from '@/types';
+import type { TestCaseResponse, StepAttachmentResponse } from '@/types';
 
 export default function TestCaseDetailPage() {
   const { projectId, testCaseId } = useParams<{ projectId: string; testCaseId: string }>();
@@ -17,6 +19,19 @@ export default function TestCaseDetailPage() {
   const { data: tc, isLoading, error } = useTestCase(projectId, testCaseId);
   const deleteMutation = useDeleteTestCase(projectId!);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { canEdit } = useRole();
+  const queryClient = useQueryClient();
+
+  // Local attachment state keyed by stepId so uploads reflect immediately
+  const [stepAttachments, setStepAttachments] = useState<Record<string, StepAttachmentResponse[]>>({});
+
+  function getAttachments(stepId: string, fallback: StepAttachmentResponse[]) {
+    return stepAttachments[stepId] ?? fallback;
+  }
+
+  function handleAttachmentsChange(stepId: string, attachments: StepAttachmentResponse[]) {
+    setStepAttachments((prev) => ({ ...prev, [stepId]: attachments }));
+  }
 
   const { data: versions = [] } = useQuery({
     queryKey: ['testCaseVersions', projectId, testCaseId],
@@ -72,6 +87,24 @@ export default function TestCaseDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {canEdit ? (
+              <button
+                onClick={() => navigate(`/projects/${projectId}/test-cases/${testCaseId}/edit`)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50"
+              >
+                <Edit className="h-4 w-4" />
+                Edit
+              </button>
+            ) : (
+              <button
+                disabled
+                title="Requires Admin or Lead role"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-slate-300 border border-slate-200 rounded-lg cursor-not-allowed"
+              >
+                <Edit className="h-4 w-4" />
+                Edit
+              </button>
+            )}
             <button
               onClick={handleArchive}
               className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
@@ -145,17 +178,26 @@ export default function TestCaseDetailPage() {
                   <th className="pb-2 font-medium">Action</th>
                   <th className="pb-2 font-medium">Expected Result</th>
                   <th className="pb-2 font-medium">Test Data</th>
+                  <th className="pb-2 font-medium">Attachments</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {tc.steps
                   .sort((a, b) => a.stepNumber - b.stepNumber)
                   .map((step) => (
-                    <tr key={step.id}>
+                    <tr key={step.id} className="align-top">
                       <td className="py-2.5 text-slate-400 font-medium">{step.stepNumber}</td>
                       <td className="py-2.5 text-slate-700 whitespace-pre-wrap">{step.action}</td>
                       <td className="py-2.5 text-slate-600 whitespace-pre-wrap">{step.expectedResult || '-'}</td>
                       <td className="py-2.5 text-slate-500 whitespace-pre-wrap">{step.testData || '-'}</td>
+                      <td className="py-2.5 min-w-[180px]">
+                        <StepAttachments
+                          stepId={step.id}
+                          attachments={getAttachments(step.id, step.attachments ?? [])}
+                          canEdit={canEdit}
+                          onAttachmentsChange={handleAttachmentsChange}
+                        />
+                      </td>
                     </tr>
                   ))}
               </tbody>

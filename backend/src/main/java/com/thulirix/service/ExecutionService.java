@@ -6,6 +6,8 @@ import com.thulirix.domain.enums.RunTrigger;
 import com.thulirix.dto.request.CreateTestPlanRequest;
 import com.thulirix.dto.request.CreateTestRunRequest;
 import com.thulirix.dto.request.UpdateExecutionRequest;
+import com.thulirix.dto.request.UpdateTestPlanRequest;
+import com.thulirix.dto.request.UpdateTestRunRequest;
 import com.thulirix.dto.request.WebhookResultRequest;
 import com.thulirix.dto.response.*;
 import com.thulirix.exception.ResourceNotFoundException;
@@ -68,6 +70,30 @@ public class ExecutionService {
         TestPlan plan = testPlanRepository.findByProjectIdAndId(projectId, planId)
                 .orElseThrow(() -> new ResourceNotFoundException("TestPlan", planId));
         return toPlanResponse(plan);
+    }
+
+    public TestPlanResponse updatePlan(UUID projectId, UUID planId, UpdateTestPlanRequest request) {
+        TestPlan plan = testPlanRepository.findByProjectIdAndId(projectId, planId)
+                .orElseThrow(() -> new ResourceNotFoundException("TestPlan", planId));
+        plan.setName(request.getName());
+        if (request.getDescription() != null) plan.setDescription(request.getDescription());
+        plan = testPlanRepository.save(plan);
+        log.info("TestPlan {} updated", planId);
+        return toPlanResponse(plan);
+    }
+
+    public TestRunResponse updateRun(UUID projectId, UUID planId, UUID runId, UpdateTestRunRequest request) {
+        testPlanRepository.findByProjectIdAndId(projectId, planId)
+                .orElseThrow(() -> new ResourceNotFoundException("TestPlan", planId));
+        TestRun run = testRunRepository.findById(runId)
+                .filter(r -> r.getPlan().getId().equals(planId))
+                .orElseThrow(() -> new ResourceNotFoundException("TestRun", runId));
+        run.setName(request.getName());
+        if (request.getEnvironment() != null) run.setEnvironment(request.getEnvironment());
+        if (request.getBuildVersion() != null) run.setBuildVersion(request.getBuildVersion());
+        run = testRunRepository.save(run);
+        log.info("TestRun {} updated", runId);
+        return toRunResponse(run);
     }
 
     public TestRunResponse createRun(UUID projectId, UUID planId, CreateTestRunRequest request, UUID userId) {

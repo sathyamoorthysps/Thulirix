@@ -6,6 +6,7 @@ import ProjectsPage from '@/pages/projects/ProjectsPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import TestCasesPage from '@/pages/testcases/TestCasesPage';
 import CreateTestCasePage from '@/pages/testcases/CreateTestCasePage';
+import EditTestCasePage from '@/pages/testcases/EditTestCasePage';
 import TestCaseDetailPage from '@/pages/testcases/TestCaseDetailPage';
 import ExecutionsPage from '@/pages/execution/ExecutionsPage';
 import IntegrationPage from '@/pages/integration/IntegrationPage';
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="projects/:projectId/dashboard" element={<DashboardPage />} />
         <Route path="projects/:projectId/test-cases" element={<TestCasesPage />} />
         <Route path="projects/:projectId/test-cases/new" element={<CreateTestCasePage />} />
+        <Route path="projects/:projectId/test-cases/:testCaseId/edit" element={<EditTestCasePage />} />
         <Route path="projects/:projectId/test-cases/:testCaseId" element={<TestCaseDetailPage />} />
         <Route path="projects/:projectId/executions" element={<ExecutionsPage />} />
         <Route path="projects/:projectId/integrations" element={<IntegrationPage />} />
